@@ -1,0 +1,23 @@
+Ricerca per valore: 2975.3, tolleranza: ±0.05 km
+File: log1.txt
+
+Riga 153, Byte 3-6, 32-bit LE: 2975296 (target 2975300, scala 1000, diff -4)
+Pacchetto: 00000040662D0000000000003327121804E90731
+
+Linea completa: I	18:39:53.647	Notification received from 0000ffe4-0000-1000-8000-00805f9b34fb, value: (0x) 00-00-00-40-66-2D-00-00-00-00-00-00-33-27-12-18-04-E9-07-31
+Riga 187, Byte 4-7, 32-bit LE: 2975296 (target 2975300, scala 1000, diff -4)
+Pacchetto: 0000000040662D0000000000003427121804E907
+
+Linea completa: I	18:39:54.070	Notification received from 0000ffe4-0000-1000-8000-00805f9b34fb, value: (0x) 00-00-00-00-40-66-2D-00-00-00-00-00-00-34-27-12-18-04-E9-07
+Riga 221, Byte 3-6, 32-bit LE: 2975296 (target 2975300, scala 1000, diff -4)
+Pacchetto: 00000040662D0000000000003427121804E90731
+
+Linea completa: I	18:39:54.489	Notification received from 0000ffe4-0000-1000-8000-00805f9b34fb, value: (0x) 00-00-00-40-66-2D-00-00-00-00-00-00-34-27-12-18-04-E9-07-31
+Riga 255, Byte 3-6, 32-bit LE: 2975296 (target 2975300, scala 1000, diff -4)
+Pacchetto: 00000040662D0000000000003527121804E90731
+
+Linea completa: I	18:39:54.910	Notification received from 0000ffe4-0000-1000-8000-00805f9b34fb, value: (0x) 00-00-00-40-66-2D-00-00-00-00-00-00-35-27-12-18-04-E9-07-31
+Riga 323, Byte 3-6, 32-bit LE: 2975296 (target 2975300, scala 1000, diff -4)
+Pacchetto: 00000040662D0000000000003627121804E90731
+
+Linea completa: I	18:39:55.796	Notification received from 0000ffe4-0000-1000-8000-00805f9b34fb, value: (0x) 00-00-00-40-66-2D-00-00-00-00-00-00-36-27-12-18-04-E9-07-31
