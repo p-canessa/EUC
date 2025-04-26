@@ -1,0 +1,4 @@
+Ricerca per valore: 12954.2, tolleranza: ±0.05 km
+File: sherman_log.txt
+
+Nessun valore trovato.
