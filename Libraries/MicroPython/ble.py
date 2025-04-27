@@ -3,6 +3,11 @@ from ubluetooth import BLE, UUID
 import time
 from constants import EUC_NAME_FILTERS
 from errors import BLEScanError, BLEConnectionError, BLECommunicationError
+from euc.inmotion import InMotionAdapter
+from euc.kingsong import KingsongAdapter
+from euc.gotway import GotwayAdapter
+from euc.ninebot import NinebotAdapter
+from euc.veteran import VeteranAdapter
 
 class BLEManager:
     def __init__(self):
@@ -18,7 +23,8 @@ class BLEManager:
         self.char_uuid = None
         self._scan_callback = None
         self._data_buffer = bytearray()
-        self._connection_timeout = 5  # Timeout connessione in secondi
+        self._connection_timeout = 5
+        self.adapter = None
 
     def scan(self, duration_ms=5000):
         """Scansiona dispositivi BLE e restituisce una lista di dispositivi rilevati."""
@@ -27,7 +33,7 @@ class BLEManager:
             self.ble.gap_scan(duration_ms, 30000, 30000)
             self.ble.irq(self._irq_handler)
             time.sleep_ms(duration_ms + 100)
-            self.ble.gap_scan(None)  # Ferma scansione
+            self.ble.gap_scan(None)
         except Exception as e:
             raise BLEScanError(f"Errore durante la scansione BLE: {e}")
         
@@ -36,53 +42,67 @@ class BLEManager:
         return self.devices
 
     def _irq_handler(self, event, data):
-        """Gestisce eventi BLE."""
         try:
-            if event == 5:  # Evento di scansione
+            if event == 5:
                 addr_type, addr, adv_type, rssi, adv_data = data
                 addr = bytes(addr)
                 name = self._parse_adv_data(adv_data) or "Unknown"
-                if any(filter_str in name for filter_str in EUC_NAME_FILTERS):
-                    device = {
-                        "name": name,
-                        "mac": ":".join(["%02X" % b for b in addr]),
-                        "rssi": rssi,
-                        "adv_data": adv_data
-                    }
-                    if device not in self.devices:  # Evita duplicati
-                        self.devices.append(device)
-            elif event == 6:  # Errore scansione
+                for euc_type, info in EUC_NAME_FILTERS.items():
+                    if info["name"] in name:
+                        device = {
+                            "name": name,
+                            "mac": ":".join(["%02X" % b for b in addr]),
+                            "rssi": rssi,
+                            "adv_data": adv_data,
+                            "euc_type": euc_type
+                        }
+                        if device not in self.devices:
+                            self.devices.append(device)
+            elif event == 6:
                 raise BLEScanError("Errore evento scansione BLE.")
         except Exception as e:
             raise BLEScanError(f"Errore gestione evento BLE: {e}")
 
     def _parse_adv_data(self, adv_data):
-        """Estrae il nome del dispositivo dai dati pubblicitari."""
         try:
             i = 0
             while i + 1 < len(adv_data):
                 length = adv_data[i]
                 if length == 0:
                     break
-                if adv_data[i + 1] == 0x09:  # Tipo: Nome completo
+                if adv_data[i + 1] == 0x09:
                     return adv_data[i + 2:i + length + 1].decode('utf-8')
                 i += length + 1
             return None
         except Exception as e:
             raise BLEScanError(f"Errore parsing dati pubblicitari: {e}")
 
-    def connect(self, mac, service_uuid, char_uuid):
-        """Si connette a un dispositivo specificato dal MAC."""
+    def select_adapter(self, euc_type):
+        """Seleziona l'adattatore in base al tipo di EUC."""
+        adapters = {
+            "InMotion": InMotionAdapter,
+            "Kingsong": KingsongAdapter,
+            "Gotway": GotwayAdapter,
+            "Ninebot": NinebotAdapter,
+            "Veteran": VeteranAdapter
+        }
+        adapter_class = adapters.get(euc_type)
+        if not adapter_class:
+            raise BLEConnectionError(f"Tipo EUC non supportato: {euc_type}")
+        return adapter_class(self)
+
+    def connect(self, mac, euc_type):
+        """Si connette a un dispositivo e seleziona l'adattatore."""
         if self.connected:
             raise BLEConnectionError("Già connesso a un dispositivo. Disconnetti prima.")
         
         try:
-            self.service_uuid = UUID(service_uuid)
-            self.char_uuid = UUID(char_uuid)
+            self.adapter = self.select_adapter(euc_type)
+            self.service_uuid = UUID(self.adapter.service_uuid)
+            self.char_uuid = UUID(self.adapter.char_uuid)
             addr = bytes(int(x, 16) for x in mac.split(":"))
             self.ble.gap_connect(0, addr)
             
-            # Attendi connessione con timeout
             start_time = time.time()
             while not self.connected and (time.time() - start_time) < self._connection_timeout:
                 time.sleep_ms(100)
@@ -91,7 +111,6 @@ class BLEManager:
                 raise BLEConnectionError(f"Timeout connessione a {mac}")
             
             self.current_device = mac
-            # Abilita notifiche sulla caratteristica
             self.ble.gattc_write(self.char_uuid, b'\x01\x00', 1)
         except ValueError as e:
             raise BLEConnectionError(f"Formato MAC non valido: {e}")
@@ -99,7 +118,6 @@ class BLEManager:
             raise BLEConnectionError(f"Errore connessione a {mac}: {e}")
 
     def read(self):
-        """Legge dati dalla caratteristica BLE."""
         if not self.connected:
             raise BLECommunicationError("Non connesso a nessun dispositivo.")
         
@@ -110,11 +128,10 @@ class BLEManager:
                 return data
             return None
         except Exception as e:
-            self.disconnect()  # Disconnetti in caso di errore critico
+            self.disconnect()
             raise BLECommunicationError(f"Errore lettura dati BLE: {e}")
 
     def write(self, data):
-        """Scrive dati sulla caratteristica BLE."""
         if not self.connected:
             raise BLECommunicationError("Non connesso a nessun dispositivo.")
         
@@ -125,12 +142,12 @@ class BLEManager:
             raise BLECommunicationError(f"Errore scrittura dati BLE: {e}")
 
     def disconnect(self):
-        """Disconnette il dispositivo attuale."""
         try:
             if self.connected:
                 self.ble.gap_disconnect()
                 self.connected = False
                 self.current_device = None
                 self._data_buffer = bytearray()
+                self.adapter = None
         except Exception as e:
             raise BLECommunicationError(f"Errore disconnessione: {e}")
