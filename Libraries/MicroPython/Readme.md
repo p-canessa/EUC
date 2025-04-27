@@ -9,7 +9,7 @@ Libreria MicroPython per controllare monocicli elettrici (EUC) tramite Bluetooth
 
 ## Installazione
 1. Clona o scarica il repository.
-2. Copia la cartella `micropython` nella memoria dell'ESP32 (es. `/lib`).
+2. Copia la cartella `wheellog_euc_micropython` nella memoria dell'ESP32 (es. `/lib`).
 3. Carica gli script di esempio in `/`.
 
 ## Funzionalità
@@ -17,41 +17,53 @@ Libreria MicroPython per controllare monocicli elettrici (EUC) tramite Bluetooth
 - **Connessione**: Si connette a un dispositivo specificato tramite MAC.
 - **Parsing dati**: Estrae velocità, batteria, distanza, ecc. dai pacchetti BLE.
 - **Comandi**: Supporta comandi come cambio modalità pedalata.
+- **Gestione errori**: Gestisce errori di scansione, connessione, comunicazione e parsing.
 
 ## API Reference
 
 ### `BLEManager`
-- `scan(duration_ms=5000)`: Esegue la scansione BLE per `duration_ms` millisecondi. Restituisce una lista di dizionari con:
-  - `name`: Nome del dispositivo.
-  - `mac`: Indirizzo MAC.
-  - `rssi`: Intensità del segnale.
-  - `adv_data`: Dati pubblicitari grezzi.
-- `connect(mac, service_uuid, char_uuid)`: Si connette al dispositivo con indirizzo MAC specificato.
-- `read()`: Legge dati dalla caratteristica BLE.
-- `write(data)`: Scrive dati sulla caratteristica BLE.
-- `disconnect()`: Disconnette il dispositivo attuale.
+- `scan(duration_ms=5000)`: Esegue la scansione BLE. Lancia `BLEScanError` se fallisce.
+  - Restituisce lista di dizionari: `{"name": str, "mac": str, "rssi": int, "adv_data": bytes}`.
+- `connect(mac, service_uuid, char_uuid)`: Si connette al dispositivo. Lancia `BLEConnectionError` se fallisce.
+- `read()`: Legge dati. Lancia `BLECommunicationError` se fallisce.
+- `write(data)`: Scrive dati. Lancia `BLECommunicationError` se fallisce.
+- `disconnect()`: Disconnette. Lancia `BLECommunicationError` se fallisce.
 
 ### `BaseAdapter`
 Classe base astratta per adattatori EUC.
-- `decode(data)`: Parsa i dati ricevuti (implementato nelle sottoclassi).
-- `update_pedals_mode(mode)`: Aggiorna la modalità dei pedali (implementato nelle sottoclassi).
+- `decode(data)`: Parsa i dati ricevuti (implementato nelle sottoclassi). Lancia `EUCParseError`.
+- `update_pedals_mode(mode)`: Aggiorna la modalità dei pedali. Lancia `EUCCommandError`.
 
 ### `InMotionAdapter`
 Adattatore per EUC InMotion.
-- `decode(data)`: Restituisce un dizionario con `speed`, `battery`, `distance`.
-- `update_pedals_mode(mode)`: Invia comando per cambiare modalità (es. `mode=1` per modalità morbida).
+- `decode(data)`: Restituisce dizionario con `speed`, `battery`, `distance`. Lancia `EUCParseError` se fallisce.
+- `update_pedals_mode(mode)`: Invia comando modalità (es. `0`, `1`, `2`). Lancia `EUCCommandError` se fallisce.
+
+## Gestione Errori
+La libreria definisce eccezioni personalizzate:
+- `WheelLogError`: Base per tutti gli errori.
+- `BLEScanError`: Errori di scansione.
+- `BLEConnectionError`: Errori di connessione.
+- `BLECommunicationError`: Errori di lettura/scrittura.
+- `EUCParseError`: Errori di parsing dati.
+- `EUCCommandError`: Errori di comandi EUC.
 
 ## Esempio
 ```python
-from micropython.ble import BLEManager
-from micropython.euc.inmotion import InMotionAdapter
+from wheellog_euc_micropython.ble import BLEManager
+from wheellog_euc_micropython.euc.inmotion import InMotionAdapter
+from wheellog_euc_micropython.errors import (
+    BLEScanError, BLEConnectionError, BLECommunicationError, EUCParseError
+)
 import time
 
 ble = BLEManager()
-devices = ble.scan(5000)
-if devices:
+try:
+    devices = ble.scan(5000)
+    print("Dispositivi trovati:")
+    for i, device in enumerate(devices):
+        print(f"{i}: {device['name']} ({device['mac']})")
     selected = devices[0]
-    print(f"Connessione a {selected['name']} ({selected['mac']})")
     adapter = InMotionAdapter(ble)
     ble.connect(selected['mac'], adapter.service_uuid, adapter.char_uuid)
     while True:
@@ -61,3 +73,7 @@ if devices:
             if result:
                 print(f"Velocità: {result['speed']} km/h, Batteria: {result['battery']}%")
         time.sleep_ms(100)
+except (BLEScanError, BLEConnectionError, BLECommunicationError, EUCParseError) as e:
+    print(f"Errore: {e}")
+finally:
+    ble.disconnect()
