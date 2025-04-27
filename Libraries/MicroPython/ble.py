@@ -78,7 +78,6 @@ class BLEManager:
             raise BLEScanError(f"Errore parsing dati pubblicitari: {e}")
 
     def select_adapter(self, euc_type):
-        """Seleziona l'adattatore in base al tipo di EUC."""
         adapters = {
             "InMotion": InMotionAdapter,
             "Kingsong": KingsongAdapter,
@@ -92,7 +91,6 @@ class BLEManager:
         return adapter_class(self)
 
     def connect(self, mac, euc_type):
-        """Si connette a un dispositivo e seleziona l'adattatore."""
         if self.connected:
             raise BLEConnectionError("Già connesso a un dispositivo. Disconnetti prima.")
         
