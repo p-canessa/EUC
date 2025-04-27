@@ -1,4 +1,4 @@
-# wheellog_euc_micropython/euc/gotway.py
+# micropython/euc/gotway.py
 from .base_adapter import BaseAdapter
 from constants import GOTWAY_SERVICE_UUID, GOTWAY_CHAR_UUID
 from errors import EUCParseError, EUCCommandError
