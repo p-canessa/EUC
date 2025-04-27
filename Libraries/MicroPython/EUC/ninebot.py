@@ -1,4 +1,4 @@
-# wheellog_euc_micropython/euc/ninebot.py
+# micropython/euc/ninebot.py
 from .base_adapter import BaseAdapter
 from constants import NINEBOT_SERVICE_UUID, NINEBOT_CHAR_UUID
 from errors import EUCParseError, EUCCommandError
