@@ -1,10 +1,22 @@
-# micropython/constants.py
+# wheellog_euc_micropython/constants.py
 
-# UUID dei servizi BLE per EUC (esempi basati su WheelLog)
+# UUID dei servizi e caratteristiche BLE
 INMOTION_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
 INMOTION_CHAR_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
 KINGSONG_SERVICE_UUID = "0000FFE0-0000-1000-8000-00805F9B34FB"
 KINGSONG_CHAR_UUID = "0000FFE1-0000-1000-8000-00805F9B34FB"
+GOTWAY_SERVICE_UUID = "0000FFF0-0000-1000-8000-00805F9B34FB"
+GOTWAY_CHAR_UUID = "0000FFF1-0000-1000-8000-00805F9B34FB"
+NINEBOT_SERVICE_UUID = "0000FFE0-0000-1000-8000-00805F9B34FB"
+NINEBOT_CHAR_UUID = "0000FFE1-0000-1000-8000-00805F9B34FB"
+VETERAN_SERVICE_UUID = "0000FFF0-0000-1000-8000-00805F9B34FB"
+VETERAN_CHAR_UUID = "0000FFF1-0000-1000-8000-00805F9B34FB"
 
-# Nomi parziali per filtrare EUC durante la scansione
-EUC_NAME_FILTERS = ["InMotion", "KS-", "Gotway", "Ninebot", "Veteran"]
+# Filtri per nomi dispositivi
+EUC_NAME_FILTERS = {
+    "InMotion": {"name": "InMotion", "adapter": "inmotion"},
+    "Kingsong": {"name": "KS-", "adapter": "kingsong"},
+    "Gotway": {"name": "Gotway", "adapter": "gotway"},
+    "Ninebot": {"name": "Ninebot", "adapter": "ninebot"},
+    "Veteran": {"name": "LK", "adapter": "veteran"}
+}
