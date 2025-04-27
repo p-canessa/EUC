@@ -13,45 +13,38 @@ Libreria MicroPython per controllare monocicli elettrici (EUC) tramite Bluetooth
 3. Carica gli script di esempio in `/`.
 
 ## Funzionalità
-- **Scansione BLE**: Rileva dispositivi EUC vicini e restituisce nome, MAC e RSSI.
-- **Connessione**: Si connette a un dispositivo specificato tramite MAC.
-- **Parsing dati**: Estrae velocità, batteria, distanza, ecc. dai pacchetti BLE.
-- **Comandi**: Supporta comandi come cambio modalità pedalata.
+- **Scansione BLE**: Rileva dispositivi EUC (es. Veteran con nomi "LK...").
+- **Connessione**: Seleziona automaticamente l'adattatore in base al tipo EUC.
+- **Parsing dati**: Estrae velocità, batteria, distanza, temperatura, corrente, tensione.
+- **Comandi**: Supporta modalità pedalata, accensione luci (per Veteran), ecc.
 - **Gestione errori**: Gestisce errori di scansione, connessione, comunicazione e parsing.
 
 ## API Reference
 
 ### `BLEManager`
-- `scan(duration_ms=5000)`: Esegue la scansione BLE. Lancia `BLEScanError` se fallisce.
-  - Restituisce lista di dizionari: `{"name": str, "mac": str, "rssi": int, "adv_data": bytes}`.
-- `connect(mac, service_uuid, char_uuid)`: Si connette al dispositivo. Lancia `BLEConnectionError` se fallisce.
-- `read()`: Legge dati. Lancia `BLECommunicationError` se fallisce.
-- `write(data)`: Scrive dati. Lancia `BLECommunicationError` se fallisce.
-- `disconnect()`: Disconnette. Lancia `BLECommunicationError` se fallisce.
+- `scan(duration_ms=5000)`: Restituisce `[{"name": str, "mac": str, "rssi": int, "euc_type": str}]`. Lancia `BLEScanError`.
+- `connect(mac, euc_type)`: Si connette e seleziona l'adattatore. Lancia `BLEConnectionError`.
+- `read()`: Legge dati. Lanca `BLECommunicationError`.
+- `write(data)`: Scrive dati. Lancia `BLECommunicationError`.
+- `disconnect()`: Disconnette. Lancia `BLECommunicationError`.
 
 ### `BaseAdapter`
-Classe base astratta per adattatori EUC.
-- `decode(data)`: Parsa i dati ricevuti (implementato nelle sottoclassi). Lancia `EUCParseError`.
-- `update_pedals_mode(mode)`: Aggiorna la modalità dei pedali. Lancia `EUCCommandError`.
+- `decode(data)`: Parsa i dati. Lancia `EUCParseError`.
+- `update_pedals_mode(mode)`: Modalità `0` (hard), `1` (medium), `2` (soft). Lancia `EUCCommandError`.
 
-### `InMotionAdapter`
-Adattatore per EUC InMotion.
-- `decode(data)`: Restituisce dizionario con `speed`, `battery`, `distance`. Lancia `EUCParseError` se fallisce.
-- `update_pedals_mode(mode)`: Invia comando modalità (es. `0`, `1`, `2`). Lancia `EUCCommandError` se fallisce.
+### `VeteranAdapter`
+- **Supporto tensione**: Gestisce 100.8V (Sherman, Sherman Max, Sherman S, Abrams), 126V (Patton), 151.2V (Lynx, Sherman L).
+- `decode(data)`: Restituisce `{"speed": float, "battery": int, "distance": float, "temperature": float, "current": float, "voltage": float}`.
+- `update_pedals_mode(mode)`: Imposta modalità pedalata.
+- `set_lights(state)`: Accende (`1`) o spegne (`0`) le luci.
 
 ## Gestione Errori
-La libreria definisce eccezioni personalizzate:
-- `WheelLogError`: Base per tutti gli errori.
-- `BLEScanError`: Errori di scansione.
-- `BLEConnectionError`: Errori di connessione.
-- `BLECommunicationError`: Errori di lettura/scrittura.
-- `EUCParseError`: Errori di parsing dati.
-- `EUCCommandError`: Errori di comandi EUC.
+- `WheelLogError`: Base.
+- `BLEScanError`, `BLEConnectionError`, `BLECommunicationError`, `EUCParseError`, `EUCCommandError`.
 
 ## Esempio
 ```python
 from wheellog_euc_micropython.ble import BLEManager
-from wheellog_euc_micropython.euc.inmotion import InMotionAdapter
 from wheellog_euc_micropython.errors import (
     BLEScanError, BLEConnectionError, BLECommunicationError, EUCParseError
 )
@@ -62,14 +55,14 @@ try:
     devices = ble.scan(5000)
     print("Dispositivi trovati:")
     for i, device in enumerate(devices):
-        print(f"{i}: {device['name']} ({device['mac']})")
+        print(f"{i}: {device['name']} ({device['mac']}), Tipo: {device['euc_type']}")
     selected = devices[0]
-    adapter = InMotionAdapter(ble)
-    ble.connect(selected['mac'], adapter.service_uuid, adapter.char_uuid)
+    ble.connect(selected['mac'], selected['euc_type'])
+    ble.adapter.set_lights(1)  # Accendi luci (Veteran)
     while True:
         data = ble.read()
         if data:
-            result = adapter.decode(data)
+            result = ble.adapter.decode(data)
             if result:
                 print(f"Velocità: {result['speed']} km/h, Batteria: {result['battery']}%")
         time.sleep_ms(100)
