@@ -1,4 +1,4 @@
-# wheellog_euc_micropython/euc/kingsong.py
+# micropython/euc/kingsong.py
 from .base_adapter import BaseAdapter
 from constants import KINGSONG_SERVICE_UUID, KINGSONG_CHAR_UUID
 from errors import EUCParseError, EUCCommandError
