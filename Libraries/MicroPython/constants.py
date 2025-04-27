@@ -1,4 +1,4 @@
-# wheellog_euc_micropython/constants.py
+# micropython/constants.py
 
 # UUID dei servizi e caratteristiche BLE
 INMOTION_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -18,5 +18,12 @@ EUC_NAME_FILTERS = {
     "Kingsong": {"name": "KS-", "adapter": "kingsong"},
     "Gotway": {"name": "Gotway", "adapter": "gotway"},
     "Ninebot": {"name": "Ninebot", "adapter": "ninebot"},
-    "Veteran": {"name": "LK", "adapter": "veteran"}
+    "Veteran": {"name": "LK", "adapter": "veteran"}  # Aggiornato per "LK"
+}
+
+# Informazioni sulle tensioni Veteran
+VETERAN_VOLTAGE_CONFIGS = {
+    100.8: {"cells": 24, "max_voltage": 100.8, "min_voltage": 76.8},  # Sherman, Sherman Max, Sherman S, Abrams
+    126.0: {"cells": 30, "max_voltage": 126.0, "min_voltage": 96.0},  # Patton
+    151.2: {"cells": 36, "max_voltage": 151.2, "min_voltage": 115.2}  # Lynx, Sherman L
 }
