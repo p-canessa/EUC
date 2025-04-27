@@ -1,4 +1,4 @@
-# WheelLog EUC MicroPython Library
+# EUC MicroPython Library
 
 Libreria MicroPython per controllare monocicli elettrici (EUC) tramite Bluetooth Low Energy (BLE) su ESP32. Supporta InMotion, Kingsong, Gotway, Ninebot e Veteran.
 
@@ -9,7 +9,7 @@ Libreria MicroPython per controllare monocicli elettrici (EUC) tramite Bluetooth
 
 ## Installazione
 1. Clona o scarica il repository.
-2. Copia la cartella `wheellog_euc_micropython` nella memoria dell'ESP32 (es. `/lib`).
+2. Copia la cartella `micropython` nella memoria dell'ESP32 (es. `/lib`).
 3. Carica gli script di esempio in `/`.
 
 ## Funzionalità
@@ -43,8 +43,8 @@ Adattatore per EUC InMotion.
 
 ## Esempio
 ```python
-from wheellog_euc_micropython.ble import BLEManager
-from wheellog_euc_micropython.euc.inmotion import InMotionAdapter
+from micropython.ble import BLEManager
+from micropython.euc.inmotion import InMotionAdapter
 import time
 
 ble = BLEManager()
