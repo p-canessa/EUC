@@ -1,6 +1,6 @@
-# micropython/examples/scan_and_connect_veteran.py
-from wheellog_euc_micropython.ble import BLEManager
-from wheellog_euc_micropython.errors import (
+# micropython/examples/scan_and_connect_Begode.py
+from micropython.ble import BLEManager
+from micropython.errors import (
     BLEScanError, BLEConnectionError, BLECommunicationError,
     EUCParseError, EUCCommandError
 )
@@ -26,7 +26,7 @@ def main():
         
         ble.connect(selected['mac'], selected['euc_type'])
         
-        if selected['euc_type'] == "Veteran":
+        if selected['euc_type'] == "Gotway":
             try:
                 # Configura modalità pedalata
                 ble.adapter.update_pedals_mode(1)  # Media
@@ -36,33 +36,57 @@ def main():
                 ble.adapter.set_lights(1)
                 print("Luci accese.")
                 
-                # Imposta allarmi velocità
-                ble.adapter.set_speed_alert(1, 40)  # Allarme 1 a 40 km/h
-                ble.adapter.set_speed_alert(2, 50)  # Allarme 2 a 50 km/h
-                ble.adapter.set_speed_alert(3, 280)  # Allarme 3 disattivato
-                print("Allarmi velocità impostati: 40 km/h, 50 km/h, disattivato.")
+                # Imposta allarme acustico
+                ble.adapter.set_speed_alert(1)  # Primo livello
+                print("Allarme acustico impostato al primo livello.")
                 
-                # Regola angolo pedane
+                # Imposta allarme velocità con soglia (ipotetico)
+                ble.adapter.set_speed_alert_with_speed(1, 40)  # 40 km/h
+                print("Allarme velocità impostato a 40 km/h (ipotetico).")
+                
+                # Imposta tilt-back (ipotetico)
+                ble.adapter.set_tiltback_alert(50)  # 50 km/h
+                print("Tilt-back impostato a 50 km/h (ipotetico).")
+                
+                # Regola angolo pedane (ipotetico)
                 ble.adapter.set_pedal_angle(2.0)  # +2°
-                print("Angolo pedane impostato a +2°.")
+                print("Angolo pedane impostato a +2° (ipotetico).")
                 
-                # Attiva clacson
+                # Attiva clacson (ipotetico)
                 ble.adapter.activate_horn()
-                print("Clacson attivato.")
+                print("Clacson attivato (ipotetico).")
                 
                 # Richiedi dati seriali
                 ble.adapter.request_serial_data()
                 print("Richiesti dati seriali.")
                 
-                # Imposta modalità di guida
+                # Imposta modalità di guida (ipotetico)
                 ble.adapter.set_ride_mode(1)  # Normale
-                print("Modalità di guida impostata su normale.")
+                print("Modalità di guida impostata su normale (ipotetico).")
+                
+                # Richiedi stato
+                ble.adapter.request_status()
+                print("Richiesto stato.")
                 
                 # Nota: Non eseguo la calibrazione automaticamente per sicurezza
                 # ble.adapter.start_calibration()
-                # print("Calibrazione avviata.")
+                # print("Calibrazione avviata (ipotetico).")
             except EUCCommandError as e:
-                print(f"Errore comando: {e}")
+                print(f"Errore comando Gotway: {e}")
+        elif selected['euc_type'] == "Veteran":
+            try:
+                ble.adapter.update_pedals_mode(1)
+                ble.adapter.set_lights(1)
+                ble.adapter.set_speed_alert(1, 40)
+                ble.adapter.set_speed_alert(2, 50)
+                ble.adapter.set_speed_alert(3, 280)  # Nessun allarme (da verificare)
+                ble.adapter.set_pedal_angle(2.0)
+                ble.adapter.activate_horn()
+                ble.adapter.request_serial_data()
+                ble.adapter.set_ride_mode(1)
+                print("Comandi Veteran eseguiti.")
+            except EUCCommandError as e:
+                print(f"Errore comando Veteran: {e}")
         
         while True:
             try:
@@ -76,24 +100,4 @@ def main():
                               f"Temperatura: {result['temperature']}°C, "
                               f"Corrente: {result['current']}A, "
                               f"Tensione: {result['voltage']}V")
-            except (BLECommunicationError, EUCParseError) as e:
-                print(f"Errore comunicazione/parsing: {e}")
-                break
-            except KeyboardInterrupt:
-                print("Interruzione manuale.")
-                break
-            time.sleep_ms(100)
-    
-    except BLEScanError as e:
-        print(f"Errore scansione: {e}")
-    except BLEConnectionError as e:
-        print(f"Errore connessione: {e}")
-    finally:
-        try:
-            ble.disconnect()
-            print("Disconnesso.")
-        except Exception as e:
-            print(f"Errore disconnessione: {e}")
-
-if __name__ == "__main__":
-    main()
+            except (BLECommunicationError, EU

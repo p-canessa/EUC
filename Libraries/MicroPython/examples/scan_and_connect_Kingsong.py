@@ -1,6 +1,6 @@
-# micropython/examples/scan_and_connect_InMotion.py
-from wheellog_euc_micropython.ble import BLEManager
-from wheellog_euc_micropython.errors import (
+# micropython/examples/scan_and_connect_Kingsong.py
+from micropython.ble import BLEManager
+from micropython.errors import (
     BLEScanError, BLEConnectionError, BLECommunicationError,
     EUCParseError, EUCCommandError
 )
@@ -24,30 +24,33 @@ def main():
         selected = devices[0]
         print(f"Connessione a {selected['name']} ({selected['mac']})...")
         
-        model = "V10F" if "V10" in selected['name'] else "default"
-        ble.connect(selected['mac'], selected['euc_type'], model=model)
+        ble.connect(selected['mac'], selected['euc_type'])
         
-        if selected['euc_type'] == "InMotion":
+        if selected['euc_type'] == "Kingsong":
             try:
-                # Configura modalità pedane
-                ble.adapter.update_pedals_mode(1)  # Offroad
-                print("Modalità pedane impostata su Offroad.")
+                # Configura modalità pedalata
+                ble.adapter.update_pedals_mode(1)  # Media
+                print("Modalità pedali impostata su media.")
                 
                 # Accendi luci
                 ble.adapter.set_lights(1)
                 print("Luci accese.")
                 
-                # Imposta allarme velocità
-                ble.adapter.set_speed_alert(30.0)  # 30 km/h
-                print("Allarme velocità impostato a 30 km/h.")
+                # Imposta allarme acustico
+                ble.adapter.set_speed_alert(1)  # Primo livello
+                print("Allarme acustico impostato al primo livello.")
+                
+                # Imposta allarme velocità con soglia (ipotetico)
+                ble.adapter.set_speed_alert_with_speed(1, 30)  # 30 km/h
+                print("Allarme velocità impostato a 30 km/h (ipotetico).")
                 
                 # Imposta tilt-back (ipotetico)
-                ble.adapter.set_tiltback_alert(40.0)  # 40 km/h
+                ble.adapter.set_tiltback_alert(40)  # 40 km/h
                 print("Tilt-back impostato a 40 km/h (ipotetico).")
                 
-                # Regola angolo pedane
+                # Regola angolo pedane (ipotetico)
                 ble.adapter.set_pedal_angle(2.0)  # +2°
-                print("Angolo pedane impostato a +2°.")
+                print("Angolo pedane impostato a +2° (ipotetico).")
                 
                 # Attiva clacson
                 ble.adapter.activate_horn()
@@ -65,28 +68,9 @@ def main():
                 ble.adapter.request_status()
                 print("Richiesto stato.")
                 
-                # Richiedi dati live
-                ble.adapter.request_live_data()
-                print("Richiesti dati live.")
-                
                 # Nota: Non eseguo la calibrazione automaticamente per sicurezza
                 # ble.adapter.start_calibration()
                 # print("Calibrazione avviata (ipotetico).")
-            except EUCCommandError as e:
-                print(f"Errore comando InMotion: {e}")
-        elif selected['euc_type'] == "Kingsong":
-            try:
-                ble.adapter.update_pedals_mode(1)
-                ble.adapter.set_lights(1)
-                ble.adapter.set_speed_alert(1)
-                ble.adapter.set_speed_alert_with_speed(1, 30)
-                ble.adapter.set_tiltback_alert(40)
-                ble.adapter.set_pedal_angle(2.0)
-                ble.adapter.activate_horn()
-                ble.adapter.request_serial_data()
-                ble.adapter.set_ride_mode(1)
-                ble.adapter.request_status()
-                print("Comandi Kingsong eseguiti.")
             except EUCCommandError as e:
                 print(f"Errore comando Kingsong: {e}")
         elif selected['euc_type'] == "Gotway":
@@ -110,7 +94,7 @@ def main():
                 ble.adapter.set_lights(1)
                 ble.adapter.set_speed_alert(1, 40)
                 ble.adapter.set_speed_alert(2, 50)
-                ble.adapter.set_speed_alert(3, 280)
+                ble.adapter.set_speed_alert(3, 280)  # Nessun allarme (da verificare)
                 ble.adapter.set_pedal_angle(2.0)
                 ble.adapter.activate_horn()
                 ble.adapter.request_serial_data()

@@ -1,6 +1,6 @@
-# micropython/examples/scan_and_connect_InMotion.py
-from wheellog_euc_micropython.ble import BLEManager
-from wheellog_euc_micropython.errors import (
+# micropython/examples/scan_and_connect_Ninebot.py
+from micropython.ble import BLEManager
+from micropython.errors import (
     BLEScanError, BLEConnectionError, BLECommunicationError,
     EUCParseError, EUCCommandError
 )
@@ -24,54 +24,22 @@ def main():
         selected = devices[0]
         print(f"Connessione a {selected['name']} ({selected['mac']})...")
         
-        model = "V10F" if "V10" in selected['name'] else "default"
+        model = "V10F" if "V10" in selected['name'] else "Z10" if "Z" in selected['name'] else "One S2" if "S2" in selected['name'] else "default"
         ble.connect(selected['mac'], selected['euc_type'], model=model)
         
         if selected['euc_type'] == "InMotion":
             try:
-                # Configura modalità pedane
                 ble.adapter.update_pedals_mode(1)  # Offroad
-                print("Modalità pedane impostata su Offroad.")
-                
-                # Accendi luci
                 ble.adapter.set_lights(1)
-                print("Luci accese.")
-                
-                # Imposta allarme velocità
-                ble.adapter.set_speed_alert(30.0)  # 30 km/h
-                print("Allarme velocità impostato a 30 km/h.")
-                
-                # Imposta tilt-back (ipotetico)
-                ble.adapter.set_tiltback_alert(40.0)  # 40 km/h
-                print("Tilt-back impostato a 40 km/h (ipotetico).")
-                
-                # Regola angolo pedane
-                ble.adapter.set_pedal_angle(2.0)  # +2°
-                print("Angolo pedane impostato a +2°.")
-                
-                # Attiva clacson
+                ble.adapter.set_speed_alert(30.0)
+                ble.adapter.set_tiltback_alert(40.0)
+                ble.adapter.set_pedal_angle(2.3)  # Aggiornato per incrementi 0.1°
                 ble.adapter.activate_horn()
-                print("Clacson attivato.")
-                
-                # Richiedi dati seriali
                 ble.adapter.request_serial_data()
-                print("Richiesti dati seriali.")
-                
-                # Imposta modalità di guida (ipotetico)
-                ble.adapter.set_ride_mode(1)  # Normale
-                print("Modalità di guida impostata su normale (ipotetico).")
-                
-                # Richiedi stato
+                ble.adapter.set_ride_mode(1)
                 ble.adapter.request_status()
-                print("Richiesto stato.")
-                
-                # Richiedi dati live
                 ble.adapter.request_live_data()
-                print("Richiesti dati live.")
-                
-                # Nota: Non eseguo la calibrazione automaticamente per sicurezza
-                # ble.adapter.start_calibration()
-                # print("Calibrazione avviata (ipotetico).")
+                print("Comandi InMotion eseguiti.")
             except EUCCommandError as e:
                 print(f"Errore comando InMotion: {e}")
         elif selected['euc_type'] == "Kingsong":
@@ -104,6 +72,21 @@ def main():
                 print("Comandi Gotway eseguiti.")
             except EUCCommandError as e:
                 print(f"Errore comando Gotway: {e}")
+        elif selected['euc_type'] == "Ninebot":
+            try:
+                ble.adapter.update_pedals_mode(1)  # Hard
+                ble.adapter.set_lights(1)
+                ble.adapter.set_speed_alert(20.0)  # 20 km/h per S2
+                ble.adapter.set_tiltback_alert(22.0)  # 22 km/h per S2
+                ble.adapter.set_pedal_angle(2.0)  # Ipotetico
+                ble.adapter.activate_horn()
+                ble.adapter.request_serial_data()
+                ble.adapter.set_ride_mode(1)  # Normale, ipotetico
+                ble.adapter.request_status()
+                ble.adapter.request_live_data()
+                print("Comandi Ninebot eseguiti.")
+            except EUCCommandError as e:
+                print(f"Errore comando Ninebot: {e}")
         elif selected['euc_type'] == "Veteran":
             try:
                 ble.adapter.update_pedals_mode(1)
