@@ -1,6 +1,7 @@
 from ubluetooth import BLE, UUID
 import time
-from constants import EUC_NAME_FILTERS, INMOTION_SERVICE_UUID, KINGSONG_SERVICE_UUID, GOTWAY_SERVICE_UUID, NINEBOT_SERVICE_UUID, VETERAN_SERVICE_UUID
+import ure
+from constants import EUC_NAME_FILTERS, EUC_BRANDS
 from errors import BLEScanError, BLEConnectionError, BLECommunicationError
 from euc.inmotion import InMotionAdapter
 from euc.kingsong import KingsongAdapter
@@ -36,8 +37,6 @@ class BLEManager:
         except Exception as e:
             raise BLEScanError(f"Errore durante la scansione BLE: {e}")
         
-        if not self.devices:
-            raise BLEScanError("Nessun dispositivo EUC trovato durante la scansione.")
         return self.devices
 
     def _irq_handler(self, event, data):
@@ -47,11 +46,32 @@ class BLEManager:
                 addr = bytes(addr)
                 name = self._parse_adv_data(adv_data, 0x09) or "Unknown"
                 uuids = self._parse_adv_uuids(adv_data)
+                
+                # Identifica il tipo EUC
                 euc_type = None
-                for euc_type_key, info in EUC_NAME_FILTERS.items():
-                    if info["name"] in name:
+                possible_brands = []
+                
+                # Passo 1: Prova i filtri dei nomi
+                sorted_filters = sorted(EUC_NAME_FILTERS.items(), key=lambda x: x[1]["priority"])
+                for euc_type_key, info in sorted_filters:
+                    if ure.match(info["name"], name):
                         euc_type = euc_type_key
+                        print(f"Match filtro: Nome={name}, euc_type={euc_type}, Filtro={info['name']}")
                         break
+                    else:
+                        print(f"Nessun match: Nome={name}, Filtro={info['name']}")
+                
+                # Passo 2: Se non trovato, usa gli UUID
+                if not euc_type and uuids:
+                    normalized_uuids = [uuid.replace('-', '').lower() for uuid in uuids]
+                    sorted_brands = sorted(EUC_BRANDS, key=lambda x: x["uuid_priority"])
+                    for brand_info in sorted_brands:
+                        normalized_service_uuid = brand_info["service_uuid"].replace('-', '').lower()
+                        if normalized_service_uuid in normalized_uuids:
+                            euc_type = brand_info["euc_type"]
+                            print(f"Match UUID: Nome={name}, euc_type={euc_type}, UUID={brand_info['service_uuid']}")
+                            break
+                        possible_brands.append(brand_info["brand"])
                 
                 device = {
                     "name": name,
@@ -59,8 +79,10 @@ class BLEManager:
                     "rssi": rssi,
                     "adv_data": adv_data,
                     "euc_type": euc_type,
-                    "uuids": uuids
+                    "uuids": uuids,
+                    "possible_brands": possible_brands if not euc_type else []
                 }
+                print(f"Dispositivo aggiunto: {device}")
                 if device not in self.devices:
                     self.devices.append(device)
             elif event == 6:
