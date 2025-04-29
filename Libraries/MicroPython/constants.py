@@ -16,7 +16,7 @@ VETERAN_CHAR_UUID = "0000FFF1-0000-1000-8000-00805F9B34FB"
 # Filtri per nomi dispositivi
 EUC_NAME_FILTERS = {
     "InMotion": {
-        "name": r"^V\d{1,2}[A-Z]*-[A-Z0-9]{8}$",
+        "name": r"^V\d+[A-Z]*-[A-Z0-9]+$",
         "priority": 1,
         "description": "Inizia con V, 1-2 cifre, 0+ lettere, trattino, 8 caratteri alfanumerici (es. V10F-AE86027D)"
     },
@@ -26,7 +26,7 @@ EUC_NAME_FILTERS = {
         "description": "Inizia con KS- (es. KS-18XL)"
     },
     "Veteran": {
-        "name": r"^LK\d{1,8}$",
+        "name": r"^LK\d+$",
         "priority": 3,
         "description": "Inizia con LK, seguito da 1-8 cifre (es. LK5158, LK10657)"
     },
@@ -36,7 +36,7 @@ EUC_NAME_FILTERS = {
         "description": "Inizia con Ninebot o Segway-Ninebot, opzionale modello (es. Ninebot E10, Segway-Ninebot)"
     },
     "Gotway": {
-        "name": r".*",
+        "name":  None,  # Nessun filtro regex, verifica tramite UUID
         "priority": 5,
         "description": "Qualsiasi nome, ultima priorità (es. CustomName)"
     }
