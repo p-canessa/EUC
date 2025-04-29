@@ -1,7 +1,6 @@
-# micropython/ble.py
 from ubluetooth import BLE, UUID
 import time
-from constants import EUC_NAME_FILTERS
+from constants import EUC_NAME_FILTERS, INMOTION_SERVICE_UUID, KINGSONG_SERVICE_UUID, GOTWAY_SERVICE_UUID, NINEBOT_SERVICE_UUID, VETERAN_SERVICE_UUID
 from errors import BLEScanError, BLEConnectionError, BLECommunicationError
 from euc.inmotion import InMotionAdapter
 from euc.kingsong import KingsongAdapter
@@ -43,39 +42,74 @@ class BLEManager:
 
     def _irq_handler(self, event, data):
         try:
-            if event == 5:
+            if event == 5:  # Evento di scansione
                 addr_type, addr, adv_type, rssi, adv_data = data
                 addr = bytes(addr)
-                name = self._parse_adv_data(adv_data) or "Unknown"
-                for euc_type, info in EUC_NAME_FILTERS.items():
+                name = self._parse_adv_data(adv_data, 0x09) or "Unknown"
+                uuids = self._parse_adv_uuids(adv_data)
+                euc_type = None
+                for euc_type_key, info in EUC_NAME_FILTERS.items():
                     if info["name"] in name:
-                        device = {
-                            "name": name,
-                            "mac": ":".join(["%02X" % b for b in addr]),
-                            "rssi": rssi,
-                            "adv_data": adv_data,
-                            "euc_type": euc_type
-                        }
-                        if device not in self.devices:
-                            self.devices.append(device)
+                        euc_type = euc_type_key
+                        break
+                
+                device = {
+                    "name": name,
+                    "mac": ":".join(["%02X" % b for b in addr]),
+                    "rssi": rssi,
+                    "adv_data": adv_data,
+                    "euc_type": euc_type,
+                    "uuids": uuids
+                }
+                if device not in self.devices:
+                    self.devices.append(device)
             elif event == 6:
                 raise BLEScanError("Errore evento scansione BLE.")
         except Exception as e:
             raise BLEScanError(f"Errore gestione evento BLE: {e}")
 
-    def _parse_adv_data(self, adv_data):
+    def _parse_adv_data(self, adv_data, ad_type):
+        """Parsa dati di advertising per il tipo specificato (es. 0x09 per nome)."""
         try:
             i = 0
             while i + 1 < len(adv_data):
                 length = adv_data[i]
                 if length == 0:
                     break
-                if adv_data[i + 1] == 0x09:
+                if adv_data[i + 1] == ad_type:
                     return adv_data[i + 2:i + length + 1].decode('utf-8')
                 i += length + 1
             return None
         except Exception as e:
             raise BLEScanError(f"Errore parsing dati pubblicitari: {e}")
+
+    def _parse_adv_uuids(self, adv_data):
+        """Parsa UUID dei servizi dai dati di advertising."""
+        uuids = []
+        try:
+            i = 0
+            while i + 1 < len(adv_data):
+                length = adv_data[i]
+                if length == 0:
+                    break
+                ad_type = adv_data[i + 1]
+                if ad_type in (0x02, 0x03, 0x06, 0x07):  # UUID a 16-bit o 128-bit
+                    data = adv_data[i + 2:i + length + 1]
+                    if ad_type in (0x02, 0x03):  # UUID a 16-bit
+                        for j in range(0, len(data), 2):
+                            uuid = data[j:j+2][::-1].hex().upper()
+                            uuid = f"0000{uuid}-0000-1000-8000-00805F9B34FB"
+                            uuids.append(uuid)
+                    elif ad_type in (0x06, 0x07):  # UUID a 128-bit
+                        uuid = ""
+                        for j in range(len(data) - 1, -1, -1):
+                            uuid += f"{data[j]:02X}"
+                        uuid = f"{uuid[0:8]}-{uuid[8:12]}-{uuid[12:16]}-{uuid[16:20]}-{uuid[20:32]}".upper()
+                        uuids.append(uuid)
+                i += length + 1
+            return uuids
+        except Exception as e:
+            raise BLEScanError(f"Errore parsing UUID pubblicitari: {e}")
 
     def select_adapter(self, euc_type):
         adapters = {
