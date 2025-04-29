@@ -1,6 +1,6 @@
 # micropython/examples/scan_and_connect_InMotion.py
-from wheellog_euc_micropython.ble import BLEManager
-from wheellog_euc_micropython.errors import (
+from micropython.ble import BLEManager
+from micropython.errors import (
     BLEScanError, BLEConnectionError, BLECommunicationError,
     EUCParseError, EUCCommandError
 )

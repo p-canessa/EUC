@@ -122,7 +122,7 @@ Libreria MicroPython per controllare monocicli elettrici (EUC) tramite Bluetooth
 - `request_status()`: Richiede versione firmware.
 
 ## Gestione Errori
-- `WheelLogError`: Base.
+- `EUC_Error`: Base.
 - `BLEScanError`, `BLEConnectionError`, `BLECommunicationError`, `EUCParseError`, `EUCCommandError`.
 
 ## Esempio
